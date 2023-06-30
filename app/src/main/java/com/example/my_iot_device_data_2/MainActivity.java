@@ -6,13 +6,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -25,15 +34,25 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     Button spinBTN;
     TextView viewAllTV, countDayTV, dateTV, countDownTV;
+    TextView tempTV, HumidTV;
+
+    private static final long COUNTDOWN_INTERVAL = 1000; // Interval of 1 second
+    private static final long MILLIS_IN_DAY = 24 * 60 * 60 * 1000; // Milliseconds in a day
 
     private CountDownTimer countDownTimer;
-    private long timeLeftInInMilliSeconds = 300000; // 5 minutes
+    private long countdownDuration;
+    private long startTime;
+    private long timeRemaining;
 
 
     // creating a variable for our array list, adapter class,
@@ -50,12 +69,22 @@ public class MainActivity extends AppCompatActivity {
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         getWindow().setStatusBarColor(ContextCompat.getColor(getApplicationContext(), R.color.white));
 
+        Date currentTime = Calendar.getInstance().getTime();
+        String formattedDate = DateFormat.getDateInstance(DateFormat.DATE_FIELD).format(currentTime);
+
         countDownTV = findViewById(R.id.TVCountDown);
 
         spinBTN = findViewById(R.id.BTNspin);
         viewAllTV = findViewById(R.id.TVviewAll);
         countDayTV = findViewById(R.id.TVcountDay);
+        tempTV = findViewById(R.id.column2);
+        HumidTV = findViewById(R.id.TVhumidity);
+
+        int currentDay = calculateCurrentDay();
+        countDayTV.setText(String.valueOf(currentDay));
+
         dateTV = findViewById(R.id.TVdateAtTop);
+        dateTV.setText(formattedDate);
 
         // creating a new array list.
         dataModelArrayList = new ArrayList<>();
@@ -76,41 +105,73 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        startTimer();
+        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        countdownDuration = sharedPreferences.getLong("countdownDuration", 0 * MILLIS_IN_DAY);
+        startTime = sharedPreferences.getLong("startTime", System.currentTimeMillis());
+        timeRemaining = countdownDuration - (System.currentTimeMillis() - startTime);
+
+        startCountDown();
     }
 
     private void getDataFromAPI() {
 
         // creating a string variable for URL.
-//      url of iot data sheet
-                String url = "https://script.google.com/macros/s/AKfycbyhDIz41OyFuaWwPpzWSCvelgjUV24VAGGdf4KhS9kSjLFq-A_uE_fy30RTMGMxsdFx/exec?action=get";
-
-        // creating a new variable for our request queue
+        // URL = ""https://sheets.googleapis.com/v4/spreadsheets/{SpreadSheet_ID}/values/{Nama_Tab}?alt=json&key={key_dari_Google_cloud_Console}";
+        String url = "https://sheets.googleapis.com/v4/spreadsheets/1hW7CGrAUklLdn6-XYxGfx269Q_cyQm24vb5sYRRNZmg/values/22-06-23?alt=json&key=AIzaSyCRFdWkYbAlHTiljAzzSJ9toRvzkLUJSFY";
         RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
 
-        // creating a variable for our JSON object request and passing our URL to it.
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
                 loadingPB.setVisibility(View.GONE);
                 try {
-                    JSONObject feedObj = response.getJSONObject("name");
-                    JSONArray entryArray = feedObj.getJSONArray("items");
-                    for (int i = 0; i < entryArray.length(); i++) {
-                        JSONObject entryObj = entryArray.getJSONObject(i);
-                        String column1 = entryObj.getJSONObject("gsx$name").getString("$t");
-                        String column2 = entryObj.getJSONObject("gsx$roll").getString("$t");
-                        dataModelArrayList.add(new DataModel(column1, column2));
+                    JSONArray feedObj = response.getJSONArray("values");
+                    JSONArray row = feedObj.getJSONArray(feedObj.length()-1);
+                    String extra = "";
+                    String datetime = row.getString(0);
+                    StringTokenizer data = new StringTokenizer(row.getString(1), ",") ;
+                    String motion = data.nextToken();
+                    String humidity = data.nextToken();
+                    String temperature = data.nextToken();
 
-                        // passing array list to our adapter class.
-                        myAdapter = new MyAdapter(dataModelArrayList, MainActivity.this);
+                    tempTV.setText(temperature);
+                    HumidTV.setText(humidity);
 
-                        // setting layout manager to our recycler view.
-                        dataRecyclerRV.setLayoutManager(new LinearLayoutManager(MainActivity.this));
-
-                        // setting adapter to our recycler view.
-                        dataRecyclerRV.setAdapter(myAdapter);
+                    if(row.length() > 2 && row.getString(2) != null)
+                    {
+                        extra = row.getString(2);
                     }
+
+                    Double avgHumid = 0.0;
+                    Double avgTemp = 0.0;
+
+                    for( int j = 1; j<feedObj.length(); j++)
+                    {
+                        JSONArray Values = feedObj.getJSONArray(j);
+                        String temp1 = Values.getString(0);
+                        String temp2 = Values.getString(1);
+                        String temp3 = "";
+
+                        if (Values.length() > 2) {
+                            temp3 = Values.getString(2);
+                        }
+
+                        StringTokenizer datas = new StringTokenizer(temp2, ",") ;
+                        String xxx = (datas.nextToken());
+                        Double humiditys = Double.parseDouble(datas.nextToken());
+                        Double temperatures = Double.parseDouble(datas.nextToken());
+
+                        avgHumid+= humiditys;
+                        avgTemp+= temperatures;
+                    }
+
+                    avgHumid/=feedObj.length();
+                    avgTemp/=feedObj.length();
+
+                    dataModelArrayList.add(new DataModel(datetime, avgTemp.toString(), avgHumid.toString()));
+                    myAdapter = new MyAdapter(dataModelArrayList, MainActivity.this);
+                    dataRecyclerRV.setLayoutManager(new LinearLayoutManager(MainActivity.this));
+                    dataRecyclerRV.setAdapter(myAdapter);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -124,43 +185,72 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, "Fail to get data..", Toast.LENGTH_SHORT).show();
             }
         });
-        // calling a request queue method
-        // and passing our json object
         queue.add(jsonObjectRequest);
     }
 
     //    Count Down Timer Code
-    private void startTimer() {
-        countDownTimer = new CountDownTimer(timeLeftInInMilliSeconds, 1000) {
+    private int calculateCurrentDay() {
+        LocalDate startDate = LocalDate.of(2023, 5, 28); // Replace with your own start date
+        LocalDate currentDate = LocalDate.now();
+        int currentDay = (int) ChronoUnit.DAYS.between(startDate, currentDate) + 1; // Add 1 to include the start day
+
+        return currentDay;
+    }
+
+    private void startCountDown() {
+        countDownTimer = new CountDownTimer(timeRemaining, COUNTDOWN_INTERVAL) {
             @Override
-            public void onTick(long l) {
-                timeLeftInInMilliSeconds = l;
-                updateTimer();
+            public void onTick(long millisUntilFinished) {
+                timeRemaining = millisUntilFinished;
+                updateCountdownDisplay();
             }
 
             @Override
             public void onFinish() {
-
+                // Countdown finished, handle the event here
+                // For example, show a notification or perform a specific action
             }
-        }.start();
-//        timerRunning = true;
+        };
+
+        countDownTimer.start();
     }
 
-    private void updateTimer() {
-        int minutes = (int) timeLeftInInMilliSeconds / 60000;
-        int seconds = (int) timeLeftInInMilliSeconds % 60000 / 1000;
+    private void updateCountdownDisplay() {
+        long days = TimeUnit.MILLISECONDS.toDays(timeRemaining);
+        long hours = TimeUnit.MILLISECONDS.toHours(timeRemaining) % 24;
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(timeRemaining) % 60;
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(timeRemaining) % 60;
 
-        String timeLeftText;
-        timeLeftText = "" + minutes;
-        timeLeftText += ":";
-        if (seconds < 10) timeLeftText += "0";
-        timeLeftText += seconds;
-
-        countDownTV.setText(timeLeftText);
+        // Update your UI to display the remaining days, hours, minutes, and seconds
+        countDownTV = findViewById(R.id.TVCountDown);
+        countDownTV.setText(days + " d " + hours + " hr " + minutes + " min " + seconds + " sec");
     }
 
-    private void stopTimer() {
-        countDownTimer.cancel();
-//        timerRunning = false;
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        // Save the countdown duration, start time, and remaining time to SharedPreferences
+        SharedPreferences sharedPreferences = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong("countdownDuration", countdownDuration);
+        editor.putLong("startTime", startTime);
+        editor.putLong("timeRemaining", timeRemaining);
+        editor.apply();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Calculate the time remaining based on the stored countdown duration and elapsed time
+        timeRemaining = countdownDuration - (System.currentTimeMillis() - startTime);
+        updateCountdownDisplay();
+    }
+
+
+    @Override
+    public void onBackPressed(){
+        moveTaskToBack(true);
     }
 }

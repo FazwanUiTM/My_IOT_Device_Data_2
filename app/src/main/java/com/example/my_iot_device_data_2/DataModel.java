@@ -1,62 +1,44 @@
 package com.example.my_iot_device_data_2;
 
 public class DataModel {
-    private String column1,column2;
 
-    public DataModel(String column1, String column2) {
-        this.column1 = column1;
-        this.column2 = column2;
+    String Date;
+    String Temp;
+    String Humid;
+
+    public DataModel(){
+
     }
 
-    public String getColumn1() {
-        return column1;
+    public DataModel(String date, String temp, String humid) {
+        Date = date;
+        Temp = temp;
+        Humid = humid;
     }
 
-    public void setColumn1(String column1) {
-        this.column1 = column1;
+    public String getDate() {
+        return Date;
     }
 
-    public String getColumn2() {
-        return column2;
+    public void setDate(String date) {
+        Date = date;
     }
 
-    public void setColumn2(String column2) {
-        this.column2 = column2;
+    public String getTemp() {
+        return Temp;
     }
-//    public String getName() {
-//        return name;
-//    }
-//
-//    public void setName(String name) {
-//        this.name = name;
-//    }
-//
-//    public String getRoll() {
-//        return roll;
-//    }
-//
-//    public void setRoll(String roll) {
-//        this.roll = roll;
-//    }
-//
-//    public String getStdClass() {
-//        return stdClass;
-//    }
-//
-//    public void setStdClass(String stdClass) {
-//        this.stdClass = stdClass;
-//    }
-//
-//    private String name,roll,stdClass;
-//
-//    public DataModel(String name, String roll, String stdClass) {
-//        this.name = name;
-//        this.roll = roll;
-//        this.stdClass = stdClass;
-//    }
-//
-//    public DataModel() {
-//
-//    }
+
+    public void setTemp(String temp) {
+        Temp = temp;
+    }
+
+    public String getHumid() {
+        return Humid;
+    }
+
+    public void setHumid(String humid) {
+        Humid = humid;
+    }
+
 }
 

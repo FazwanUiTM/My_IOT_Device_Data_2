@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -26,7 +27,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 public class SecondPage extends AppCompatActivity {
     ImageView backIV;
@@ -37,6 +40,10 @@ public class SecondPage extends AppCompatActivity {
     private MyAdapter myAdapter;
     private RecyclerView dataRecyclerRV;
     private ProgressBar loadingPB;
+    private DecimalFormat Df;
+
+    //private String[] DateArray = {"31-05-23", "01-06-23", "02-06-23", "03-06-23", "04-06-23", "05-06-23", "06-06-23", "07-06-23", "08-06-23", "11-06-23", "13-06-23", "14-06-23", "22-0-23"};
+    private String[] DateArray = {"07-06-23", "08-06-23", "11-06-23", "13-06-23", "14-06-23", "22-06-23"};
 
 
     @Override
@@ -57,8 +64,20 @@ public class SecondPage extends AppCompatActivity {
         dataRecyclerRV = findViewById(R.id.RVdataRecycler);
         loadingPB = findViewById(R.id.idPBLoading);
 
+        Df = new DecimalFormat("0.00");
+
         // calling a method to load our API.
-        getDataFromAPI();
+
+        myAdapter = new MyAdapter(dataModelArrayList, SecondPage.this);
+
+        dataRecyclerRV.setLayoutManager(new LinearLayoutManager(SecondPage.this));
+        dataRecyclerRV.setAdapter(myAdapter);
+
+
+        for (int i =0; i<DateArray.length; i++){
+            getDataFromAPI(DateArray[i]);
+        }
+
 
         backIV.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,54 +89,62 @@ public class SecondPage extends AppCompatActivity {
     }
 
 
-    private void getDataFromAPI() {
+    private void getDataFromAPI(String dateAPI) {
 
-            // creating a string variable for URL.
-//      url of iot data sheet
-            String url = "https://script.google.com/macros/s/AKfycbyhDIz41OyFuaWwPpzWSCvelgjUV24VAGGdf4KhS9kSjLFq-A_uE_fy30RTMGMxsdFx/exec?action=get";
+        String url = "https://sheets.googleapis.com/v4/spreadsheets/1hW7CGrAUklLdn6-XYxGfx269Q_cyQm24vb5sYRRNZmg/values/"+dateAPI+"?alt=json&key=AIzaSyCRFdWkYbAlHTiljAzzSJ9toRvzkLUJSFY";
+        RequestQueue queue = Volley.newRequestQueue(SecondPage.this);
 
-            // creating a new variable for our request queue
-            RequestQueue queue = Volley.newRequestQueue(SecondPage.this);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                loadingPB.setVisibility(View.GONE);
+                try {
+                    JSONArray feedObj = response.getJSONArray("values");
+                    JSONArray row = feedObj.getJSONArray(feedObj.length() - 1);
 
-            // creating a variable for our JSON object request and passing our URL to it.
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    loadingPB.setVisibility(View.GONE);
-                    try {
-                        JSONObject feedObj = response.getJSONObject("name");
-                        JSONArray entryArray = feedObj.getJSONArray("items");
-                        for (int i = 0; i < entryArray.length(); i++) {
-                            JSONObject entryObj = entryArray.getJSONObject(i);
-                            String column1 = entryObj.getJSONObject("gsx$name").getString("$t");
-                            String column2 = entryObj.getJSONObject("gsx$roll").getString("$t");
-                            dataModelArrayList.add(new DataModel(column1, column2));
+                    Double avgHumid = 0.0;
+                    Double avgTemp = 0.0;
 
-                            // passing array list to our adapter class.
-                            myAdapter = new MyAdapter(dataModelArrayList, SecondPage.this);
+                    for (int j = 1; j < feedObj.length(); j++) {
+                        JSONArray Values = feedObj.getJSONArray(j);
+                        String temp1 = Values.getString(0);
+                        String temp2 = Values.getString(1);
+                        String temp3 = "";
 
-                            // setting layout manager to our recycler view.
-                            dataRecyclerRV.setLayoutManager(new LinearLayoutManager(SecondPage.this));
-
-                            // setting adapter to our recycler view.
-                            dataRecyclerRV.setAdapter(myAdapter);
+                        if (Values.length() > 2) {
+                            temp3 = Values.getString(2);
                         }
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+                        Log.d("TEST", temp2);
+
+                        StringTokenizer datas = new StringTokenizer(temp2, ",");
+                        String xxx = (datas.nextToken());
+                        Double humiditys = Double.parseDouble(datas.nextToken());
+                        Double temperatures = Double.parseDouble(datas.nextToken());
+
+                        avgHumid += humiditys;
+                        avgTemp += temperatures;
                     }
 
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // handling on error listener method.
-                    Toast.makeText(SecondPage.this, "Fail to get data..", Toast.LENGTH_SHORT).show();
-                }
-            });
-            // calling a request queue method
-            // and passing our json object
-            queue.add(jsonObjectRequest);
-        }
+                    avgHumid /= feedObj.length();
+                    avgTemp /= feedObj.length();
 
+                    dataModelArrayList.add(new DataModel(dateAPI, Df.format(avgTemp).toString(),  Df.format(avgHumid).toString()));
+
+                    myAdapter.notifyDataSetChanged();
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // handling on error listener method.
+                Toast.makeText(SecondPage.this, "Fail to get data..", Toast.LENGTH_SHORT).show();
+            }
+        });
+        queue.add(jsonObjectRequest);
+    }
 }

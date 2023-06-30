@@ -93,8 +93,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         DataModel dataModel = dataModelArrayList.get(position);
 
         // on the below line we are setting data to our text view.
-        holder.column1TV.setText(dataModel.getColumn1());
-        holder.column2TV.setText(dataModel.getColumn2());
+        holder.Date.setText(dataModel.getDate());
+        holder.Temp.setText(dataModel.getTemp());
+        holder.Humid.setText(dataModel.getHumid());
 
     }
 
@@ -107,14 +108,15 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         // creating a variable for our text view
-        private TextView column1TV, column2TV;
+        private TextView Date, Temp, Humid;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
             // initializing our variables.
-            column1TV = itemView.findViewById(R.id.TVcolumn1);
-            column2TV = itemView.findViewById(R.id.column2);
+            Date = itemView.findViewById(R.id.dateTV);
+            Temp = itemView.findViewById(R.id.averageTempTV);
+            Humid = itemView.findViewById(R.id.averageHumidTV);
         }
     }
 }

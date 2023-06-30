@@ -30,7 +30,7 @@
 
         <!--        text view for displaying first name-->
         <TextView
-            android:id="@+id/TVcolumn1"
+            android:id="@+id/dateTV"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
@@ -42,31 +42,58 @@
             android:textColor="@color/black" />
 
         <TextView
-            android:id="@+id/average"
+            android:id="@+id/averageTemp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/date"
             android:layout_marginTop="10dp"
-            android:text=" Average :"
+            android:text=" Average Temp:"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
             android:textColor="@color/black"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/column2"
+            android:id="@+id/averageTempTV"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@+id/average"
-            android:layout_alignBottom="@+id/average"
+            android:layout_alignTop="@+id/averageTemp"
+            android:layout_alignBottom="@+id/averageTemp"
             android:layout_marginStart="10dp"
             android:layout_marginLeft="10dp"
             android:layout_marginTop="0dp"
             android:layout_marginBottom="0dp"
-            android:layout_toEndOf="@+id/average"
-            android:layout_toRightOf="@+id/average"
-            android:text="Column2"
+            android:layout_toEndOf="@+id/averageTemp"
+            android:layout_toRightOf="@+id/averageTemp"
+            android:text="Average Temp"
             android:textAppearance="@style/TextAppearance.AppCompat.Small"
-            android:textColor="@color/black" />
+            android:textColor="@color/black"/>
+
+        <TextView
+            android:id="@+id/averageHumid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/date"
+            android:layout_marginTop="40dp"
+            android:text=" Average Humid:"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/averageHumidTV"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/averageHumid"
+            android:layout_alignBottom="@+id/averageHumid"
+            android:layout_marginStart="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="0dp"
+            android:layout_toEndOf="@+id/averageHumid"
+            android:layout_toRightOf="@+id/averageHumid"
+            android:text="Average Humid"
+            android:textAppearance="@style/TextAppearance.AppCompat.Small"
+            android:textColor="@color/black"/>
 
 <!--        <TextView-->
 <!--            android:id="@+id/TVhumidity"-->
