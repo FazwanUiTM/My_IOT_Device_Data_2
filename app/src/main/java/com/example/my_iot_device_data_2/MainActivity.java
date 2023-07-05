@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         countDownTV = findViewById(R.id.TVCountDown);
 
-        spinBTN = findViewById(R.id.BTNspin);
+        //spinBTN = findViewById(R.id.BTNspin);
         viewAllTV = findViewById(R.id.TVviewAll);
         countDayTV = findViewById(R.id.TVcountDay);
         tempTV = findViewById(R.id.column2);
